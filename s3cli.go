@@ -281,7 +281,7 @@ func (sc *S3Cli) headObject(bucket, key string, mtime, mtimestamp bool) error {
 	return nil
 }
 
-func (sc *S3Cli) deleteObjects(bucket, prefix string) error {
+func (sc *S3Cli) deleteObjects(bucket, prefix string, wait time.Duration) error {
 	client, err := sc.newS3Client()
 	if err != nil {
 		return fmt.Errorf("init s3 Client failed: %v", err)
@@ -322,7 +322,9 @@ func (sc *S3Cli) deleteObjects(bucket, prefix string) error {
 		if sc.verbose {
 			fmt.Printf("%d Objects deleted\n", objNum)
 		}
-
+		if wait > 0 {
+			time.Sleep(wait)
+		}
 		if resp.NextMarker != nil {
 			loi.Marker = resp.NextMarker
 		} else if resp.IsTruncated != nil && *resp.IsTruncated {
@@ -337,7 +339,7 @@ func (sc *S3Cli) deleteObjects(bucket, prefix string) error {
 // deleteBucketAndObjects force delete a Bucket
 func (sc *S3Cli) deleteBucketAndObjects(bucket string, force bool) error {
 	if force {
-		if err := sc.deleteObjects(bucket, ""); err != nil {
+		if err := sc.deleteObjects(bucket, "", 0); err != nil {
 			return err
 		}
 	}
@@ -791,11 +793,16 @@ Credential Envvar:
   s3cli delete Bucket/Prefix -x`,
 		Args: cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			wait, err := time.ParseDuration(cmd.Flag("wait").Value.String())
+			if err != nil {
+				fmt.Println("invalid wait: ", err)
+				return
+			}
 			prefixMode := cmd.Flag("prefix").Changed
 			force := cmd.Flag("force").Changed
 			bucket, key := splitBucketObject(args[0])
 			if prefixMode {
-				if err := sc.deleteObjects(bucket, key); err != nil {
+				if err := sc.deleteObjects(bucket, key, wait); err != nil {
 					fmt.Println("delete Objects failed: ", err)
 				}
 			} else if key != "" {
@@ -810,6 +817,7 @@ Credential Envvar:
 		},
 	}
 	deleteObjectCmd.Flags().BoolP("force", "", false, "delete Bucket and all Objects")
+	deleteObjectCmd.Flags().DurationP("wait", "", 1*time.Second, "wait until next list")
 	deleteObjectCmd.Flags().BoolP("prefix", "x", false, "delete Objects start with specified prefix")
 	rootCmd.AddCommand(deleteObjectCmd)
 
