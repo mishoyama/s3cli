@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -54,6 +55,17 @@ func (sc *S3Cli) loadS3Cfg() (*aws.Config, error) {
 		return defaultResolver.ResolveEndpoint(service, region)
 	}
 	cfg.EndpointResolver = aws.EndpointResolverFunc(myCustomResolver)
+
+	// Create a new client by calling the constructor.
+	client := aws.NewBuildableHTTPClient().
+		WithTransportOptions(func(ts *http.Transport) {
+			ts.DisableKeepAlives = true
+		})
+
+		// Set the configured HTTP client to the SDK's Config, and use the
+	// Config to create API clients with.
+	cfg.HTTPClient = client
+
 	return &cfg, nil
 }
 
