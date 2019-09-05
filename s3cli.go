@@ -349,9 +349,9 @@ func (sc *S3Cli) deleteObjects(bucket, prefix string, wait time.Duration) error 
 }
 
 // deleteBucketAndObjects force delete a Bucket
-func (sc *S3Cli) deleteBucketAndObjects(bucket string, force bool) error {
+func (sc *S3Cli) deleteBucketAndObjects(bucket string, wait time.Duration, force bool) error {
 	if force {
-		if err := sc.deleteObjects(bucket, "", 0); err != nil {
+		if err := sc.deleteObjects(bucket, "", wait); err != nil {
 			return err
 		}
 	}
@@ -822,13 +822,14 @@ Credential Envvar:
 					fmt.Println("delete Object failed: ", err)
 				}
 			} else {
-				if err := sc.deleteBucketAndObjects(bucket, force); err != nil {
+				if err := sc.deleteBucketAndObjects(bucket, wait, force); err != nil {
 					fmt.Printf("deleted Bucket %s and Objects failed: %s\n", args[0], err)
 				}
 			}
 		},
 	}
 	deleteObjectCmd.Flags().BoolP("force", "", false, "delete Bucket and all Objects")
+	deleteObjectCmd.Flags().Uint("merge", 1, "merge n list resutl to 1 delete")
 	deleteObjectCmd.Flags().DurationP("wait", "", 1*time.Second, "wait until next list")
 	deleteObjectCmd.Flags().BoolP("prefix", "x", false, "delete Objects start with specified prefix")
 	rootCmd.AddCommand(deleteObjectCmd)
