@@ -703,6 +703,48 @@ func (sc *S3Cli) deleteObjects(bucket, prefix string) error {
 	return nil
 }
 
+// searchObjects list and filter Objects
+func (sc *S3Cli) searchObjects(bucket, prefix string, startTime, endTime time.Time) error {
+	loi := &s3.ListObjectsInput{
+		Bucket: aws.String(bucket),
+		Prefix: aws.String(prefix),
+	}
+	for {
+		req := sc.Client.ListObjectsRequest(loi)
+		resp, err := req.Send(context.Background())
+		if err != nil {
+			return fmt.Errorf("list object failed: %w", err)
+		}
+		objectNum := len(resp.Contents)
+		if objectNum == 0 {
+			break
+		}
+
+		for _, v := range resp.Contents {
+			if v.LastModified.Before(startTime) {
+				continue
+			}
+			if v.LastModified.After(endTime) {
+				continue
+			}
+			if sc.verbose {
+				fmt.Printf("%s  %s\n", v.LastModified, *v.Key)
+			} else {
+				fmt.Printf("%s\n", *v.Key)
+			}
+		}
+
+		if resp.NextMarker != nil {
+			loi.Marker = resp.NextMarker
+		} else if resp.IsTruncated != nil && *resp.IsTruncated {
+			loi.Marker = resp.Contents[objectNum-1].Key
+		} else {
+			break
+		}
+	}
+	return nil
+}
+
 // deleteBucketAndObjects force delete a Bucket
 func (sc *S3Cli) deleteBucketAndObjects(bucket string, force bool) error {
 	if force {

@@ -646,6 +646,33 @@ Credential EnvVar:
 	deleteObjectCmd.Flags().BoolP("prefix", "x", false, "delete Objects start with specified prefix")
 	rootCmd.AddCommand(deleteObjectCmd)
 
+	searchObjectCmd := &cobra.Command{
+		Use:   "search <bucket/prefix>",
+		Short: "search Object(s)",
+		Long: `search Object(s) usage:
+* search Objects(2020-03-03 00:00:00 < modifyTime < 2020-06-03 00:00:00) in Bucket
+	s3cli search bucket --start-time '2020-03-03 00:00:00' --end-time '2020-06-03 00:00:00'
+* search Objects(2020-03-03 00:00:00 < modifyTime < 2020-06-03 00:00:00) start with common prefix
+	s3cli search bucket/prefix --start-time '2020-03-03 00:00:00' --end-time '2020-06-03 00:00:00'
+`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			stime, err := time.Parse("2006-01-02 15:04:05", cmd.Flag("start-time").Value.String())
+			if err != nil {
+				return fmt.Errorf("invalid start-time %s, error %s", cmd.Flag("start-time").Value.String(), err)
+			}
+			etime, err := time.Parse("2006-01-02 15:04:05", cmd.Flag("end-time").Value.String())
+			if err != nil {
+				return fmt.Errorf("invalid enf-time %s, error %s", cmd.Flag("end-time").Value.String(), err)
+			}
+			bucket, prefix := splitBucketObject(args[0])
+			return sc.searchObjects(bucket, prefix, stime, etime)
+		},
+	}
+	searchObjectCmd.Flags().StringP("start-time", "", "2006-01-02 15:04:05", "start time(UTC)")
+	searchObjectCmd.Flags().StringP("end-time", "", "2030-01-02 15:04:05", "end time(UTC)")
+	rootCmd.AddCommand(searchObjectCmd)
+
 	// MPU sub-command
 	mpuCmd := &cobra.Command{
 		Use:   "mpu",
