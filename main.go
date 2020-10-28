@@ -12,10 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/spf13/cobra"
 )
 
@@ -39,6 +38,7 @@ var httpClient = http.Client{
 	},
 }
 
+/*
 var defaultAWSConfigResolvers = []external.AWSConfigResolver{
 	external.ResolveDefaultAWSConfig,
 	external.ResolveHandlersFunc,
@@ -52,6 +52,7 @@ var defaultAWSConfigResolvers = []external.AWSConfigResolver{
 
 	external.ResolveCredentials,
 }
+*/
 
 func splitBucketObject(bucketObject string) (bucket, object string) {
 	bo := strings.SplitN(bucketObject, "/", 2)
@@ -67,46 +68,15 @@ func newS3Client(sc *S3Cli) (*s3.Client, error) {
 		os.Setenv("AWS_SECRET_ACCESS_KEY", sc.sk)
 	}
 
-	var cfgs external.Configs
-	cfgs = append(cfgs, external.WithSharedConfigProfile(sc.profile))
-
-	cfgs, err := cfgs.AppendFromLoaders(external.DefaultConfigLoaders)
+	// Load the SDK's configuration from environment and shared config, and
+	// create the client with this.
+	cfg, err := config.LoadDefaultConfig()
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := cfgs.ResolveAWSConfig(defaultAWSConfigResolvers)
-	if err != nil {
-		return nil, err
-	}
-	cfg.Region = sc.region
-	//cfg.EndpointResolver = aws.ResolveWithEndpoint{
-	//	URL: sc.endpoint,
-	//}
-	defaultResolver := endpoints.NewDefaultResolver()
-	cfg.EndpointResolver = aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
-		if service == s3.EndpointsID {
-			return aws.Endpoint{
-				URL: sc.endpoint,
-				//SigningRegion: "custom-signing-region",
-				SigningNameDerived: true,
-			}, nil
-		}
-		return defaultResolver.ResolveEndpoint(service, region)
-	})
-	if sc.debug {
-		cfg.LogLevel = aws.LogDebug
-	}
-	cfg.HTTPClient = &httpClient
 
-	client := s3.New(cfg)
-	if sc.endpoint == "" {
-		sc.endpoint = os.Getenv(endpointEnvVar)
-	}
-	if virtualhost == false {
-		client.ForcePathStyle = true
-	} else {
-		client.ForcePathStyle = false
-	}
+	client := s3.NewFromConfig(cfg)
+
 	return client, nil
 }
 
@@ -264,19 +234,19 @@ Credential EnvVar:
 			if len(args) == 1 {
 				return sc.bucketACLGet(args[0])
 			}
-			var acl s3.BucketCannedACL
-			switch s3.BucketCannedACL(args[1]) {
-			case s3.BucketCannedACLPrivate:
-				acl = s3.BucketCannedACLPrivate
+			var acl types.BucketCannedACL
+			switch types.BucketCannedACL(args[1]) {
+			case types.BucketCannedACLPrivate:
+				acl = types.BucketCannedACLPrivate
 				break
-			case s3.BucketCannedACLPublicRead:
-				acl = s3.BucketCannedACLPublicRead
+			case types.BucketCannedACLPublicRead:
+				acl = types.BucketCannedACLPublicRead
 				break
-			case s3.BucketCannedACLPublicReadWrite:
-				acl = s3.BucketCannedACLPublicReadWrite
+			case types.BucketCannedACLPublicReadWrite:
+				acl = types.BucketCannedACLPublicReadWrite
 				break
-			case s3.BucketCannedACLAuthenticatedRead:
-				acl = s3.BucketCannedACLAuthenticatedRead
+			case types.BucketCannedACLAuthenticatedRead:
+				acl = types.BucketCannedACLAuthenticatedRead
 				break
 			default:
 				return fmt.Errorf("invalid ACL: %v", args[1])
@@ -323,13 +293,13 @@ Credential EnvVar:
 			if len(args) == 1 {
 				return sc.bucketVersioningGet(args[0])
 			}
-			var status s3.BucketVersioningStatus
-			switch s3.BucketVersioningStatus(args[1]) {
-			case s3.BucketVersioningStatusEnabled:
-				status = s3.BucketVersioningStatusEnabled
+			var status types.BucketVersioningStatus
+			switch types.BucketVersioningStatus(args[1]) {
+			case types.BucketVersioningStatusEnabled:
+				status = types.BucketVersioningStatusEnabled
 				break
-			case s3.BucketVersioningStatusSuspended:
-				status = s3.BucketVersioningStatusSuspended
+			case types.BucketVersioningStatusSuspended:
+				status = types.BucketVersioningStatusSuspended
 				break
 			default:
 				return fmt.Errorf("invalid versioning: %v", args[1])
@@ -453,28 +423,28 @@ Credential EnvVar:
 				if len(args) == 1 {
 					return sc.getObjectACL(bucket, key)
 				}
-				var acl s3.ObjectCannedACL
-				switch s3.ObjectCannedACL(args[1]) {
-				case s3.ObjectCannedACLPrivate:
-					acl = s3.ObjectCannedACLPrivate
+				var acl types.ObjectCannedACL
+				switch types.ObjectCannedACL(args[1]) {
+				case types.ObjectCannedACLPrivate:
+					acl = types.ObjectCannedACLPrivate
 					break
-				case s3.ObjectCannedACLPublicRead:
-					acl = s3.ObjectCannedACLPublicRead
+				case types.ObjectCannedACLPublicRead:
+					acl = types.ObjectCannedACLPublicRead
 					break
-				case s3.ObjectCannedACLPublicReadWrite:
-					acl = s3.ObjectCannedACLPublicReadWrite
+				case types.ObjectCannedACLPublicReadWrite:
+					acl = types.ObjectCannedACLPublicReadWrite
 					break
-				case s3.ObjectCannedACLAuthenticatedRead:
-					acl = s3.ObjectCannedACLAuthenticatedRead
+				case types.ObjectCannedACLAuthenticatedRead:
+					acl = types.ObjectCannedACLAuthenticatedRead
 					break
-				case s3.ObjectCannedACLAwsExecRead:
-					acl = s3.ObjectCannedACLAwsExecRead
+				case types.ObjectCannedACLAwsExecRead:
+					acl = types.ObjectCannedACLAwsExecRead
 					break
-				case s3.ObjectCannedACLBucketOwnerRead:
-					acl = s3.ObjectCannedACLBucketOwnerRead
+				case types.ObjectCannedACLBucketOwnerRead:
+					acl = types.ObjectCannedACLBucketOwnerRead
 					break
-				case s3.ObjectCannedACLBucketOwnerFullControl:
-					acl = s3.ObjectCannedACLBucketOwnerFullControl
+				case types.ObjectCannedACLBucketOwnerFullControl:
+					acl = types.ObjectCannedACLBucketOwnerFullControl
 					break
 				default:
 					return fmt.Errorf("invalid ACL: %s", args[1])
@@ -485,19 +455,19 @@ Credential EnvVar:
 			if len(args) == 1 {
 				return sc.bucketACLGet(bucket)
 			}
-			var acl s3.BucketCannedACL
-			switch s3.BucketCannedACL(args[1]) {
-			case s3.BucketCannedACLPrivate:
-				acl = s3.BucketCannedACLPrivate
+			var acl types.BucketCannedACL
+			switch types.BucketCannedACL(args[1]) {
+			case types.BucketCannedACLPrivate:
+				acl = types.BucketCannedACLPrivate
 				break
-			case s3.BucketCannedACLPublicRead:
-				acl = s3.BucketCannedACLPublicRead
+			case types.BucketCannedACLPublicRead:
+				acl = types.BucketCannedACLPublicRead
 				break
-			case s3.BucketCannedACLPublicReadWrite:
-				acl = s3.BucketCannedACLPublicReadWrite
+			case types.BucketCannedACLPublicReadWrite:
+				acl = types.BucketCannedACLPublicReadWrite
 				break
-			case s3.BucketCannedACLAuthenticatedRead:
-				acl = s3.BucketCannedACLAuthenticatedRead
+			case types.BucketCannedACLAuthenticatedRead:
+				acl = types.BucketCannedACLAuthenticatedRead
 				break
 			default:
 				return fmt.Errorf("invalid ACL: %s", args[1])
