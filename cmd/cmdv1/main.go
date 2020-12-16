@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -39,11 +38,17 @@ func main() {
 	flag.Parse()
 	if len(bucket) == 0 || len(sql) == 0 {
 		flag.PrintDefaults()
-		log.Fatalf("invalid parameters")
+		fmt.Println("invalid parameters")
+		return
+	}
+	var logLevel aws.LogLevelType
+	if debug {
+		logLevel = aws.LogDebug
 	}
 	cfg := aws.Config{
 		Endpoint:         &endpoint,
 		Region:           &region,
+		LogLevel:         &logLevel,
 		S3ForcePathStyle: aws.Bool(true),
 		Credentials:      credentials.NewStaticCredentials(ak, sk, ""),
 	}
@@ -69,7 +74,7 @@ func main() {
 		},
 	})
 	if err != nil {
-		log.Fatal("download ", err)
+		fmt.Println("select Object content failed, ", err)
 		return
 	}
 	defer resp.EventStream.Close()
