@@ -511,7 +511,7 @@ Credential EnvVar:
 				if cmd.Flag("all").Changed {
 					return sc.listAllObjects(bucket, prefix, delimiter, index, stime, etime)
 				}
-				maxKeys, err := cmd.Flags().GetInt64("maxkeys")
+				maxKeys, err := cmd.Flags().GetInt32("maxkeys")
 				if err != nil {
 					maxKeys = 1000
 				}
@@ -567,7 +567,7 @@ Credential EnvVar:
 				if cmd.Flag("all").Changed {
 					return sc.listAllObjectsV2(bucket, prefix, delimiter, index, fetchOwner, stime, etime)
 				}
-				maxKeys, err := cmd.Flags().GetInt64("maxkeys")
+				maxKeys, err := cmd.Flags().GetInt32("maxkeys")
 				if err != nil {
 					maxKeys = 1000
 				}
@@ -773,7 +773,7 @@ Credential EnvVar:
 				return fmt.Errorf("invalid part num: %s", err)
 			}
 			bucket, key := splitBucketObject(args[0])
-			return sc.mpuUpload(bucket, key, args[1], part, args[3])
+			return sc.mpuUpload(bucket, key, args[1], int32(part), args[3])
 		},
 	}
 	mpuCmd.AddCommand(mpuUploadCmd)

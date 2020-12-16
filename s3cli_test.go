@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 var (
@@ -80,7 +80,7 @@ func Test_bucketACLGet(t *testing.T) {
 
 func Test_bucketACLSet(t *testing.T) {
 	t.Skip("seems gofakes3 set bucketACL has bug")
-	if err := s3cliTest.bucketACLSet(testBucketName, s3.BucketCannedACLPublicReadWrite); err != nil {
+	if err := s3cliTest.bucketACLSet(testBucketName, types.BucketCannedACLPublicReadWrite); err != nil {
 		t.Error("bucketACLSet error: ", err)
 	}
 }
@@ -105,7 +105,7 @@ func Test_bucketVersioningGet(t *testing.T) {
 }
 
 func Test_bucketVersioningSet(t *testing.T) {
-	if err := s3cliTest.bucketVersioningSet(testBucketName, s3.BucketVersioningStatusEnabled); err != nil {
+	if err := s3cliTest.bucketVersioningSet(testBucketName, types.BucketVersioningStatusEnabled); err != nil {
 		t.Errorf("bucketVersioningSet failed: %s", err)
 	}
 }
@@ -147,7 +147,7 @@ func Test_getObjectACL(t *testing.T) {
 }
 
 func Test_setObjectACL(t *testing.T) {
-	if err := s3cliTest.setObjectACL(testBucketName, testObjectKey, s3.ObjectCannedACLPublicRead); err != nil {
+	if err := s3cliTest.setObjectACL(testBucketName, testObjectKey, types.ObjectCannedACLPublicRead); err != nil {
 		t.Errorf("setObjectACL failed: %s", err)
 	}
 }
