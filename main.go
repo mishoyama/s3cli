@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
@@ -68,14 +69,27 @@ func newS3Client(sc *S3Cli) (*s3.Client, error) {
 		os.Setenv("AWS_SECRET_ACCESS_KEY", sc.sk)
 	}
 
-	// Load the SDK's configuration from environment and shared config, and
-	// create the client with this.
 	cfg, err := config.LoadDefaultConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	client := s3.NewFromConfig(cfg)
+	cfg.Region = sc.region
+
+	if sc.endpoint == "" {
+		sc.endpoint = os.Getenv(endpointEnvVar)
+	}
+
+	cfg.EndpointResolver = aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
+		return aws.Endpoint{
+			URL: sc.endpoint,
+		}, nil
+	})
+	cfg.ClientLogMode = aws.LogRetries | aws.LogRequest | aws.LogResponse | aws.LogSigning
+
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.UsePathStyle = true
+	})
 
 	return client, nil
 }

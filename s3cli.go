@@ -177,14 +177,14 @@ func (sc *S3Cli) bucketACLSet(bucket string, acl types.BucketCannedACL) error {
 
 // bucketPolicyGet get a Bucket's Policy
 func (sc *S3Cli) bucketPolicyGet(bucket string) error {
-	resp, err := sc.Client.GetBucketPolicy(context.Background(), &s3.GetBucketPolicyInput{
+	output, err := sc.Client.GetBucketPolicy(context.Background(), &s3.GetBucketPolicyInput{
 		Bucket: aws.String(bucket),
 	})
 
 	if err != nil {
 		return err
 	}
-	fmt.Println(*resp.Policy)
+	fmt.Println(output)
 	return nil
 }
 
