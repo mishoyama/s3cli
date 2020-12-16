@@ -1,4 +1,4 @@
-module cmdv1
+module s3select
 
 go 1.15
 
