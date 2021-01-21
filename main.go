@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -69,7 +70,7 @@ func newS3Client(sc *S3Cli) (*s3.Client, error) {
 		os.Setenv("AWS_SECRET_ACCESS_KEY", sc.sk)
 	}
 
-	cfg, err := config.LoadDefaultConfig()
+	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +86,9 @@ func newS3Client(sc *S3Cli) (*s3.Client, error) {
 			URL: sc.endpoint,
 		}, nil
 	})
-	cfg.ClientLogMode = aws.LogRetries | aws.LogRequest | aws.LogResponse | aws.LogSigning
+	if sc.debug {
+		cfg.ClientLogMode = aws.LogRetries | aws.LogRequest | aws.LogResponse | aws.LogSigning
+	}
 
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.UsePathStyle = true
