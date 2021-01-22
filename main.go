@@ -91,7 +91,7 @@ func newS3Client(sc *S3Cli) (*s3.Client, error) {
 	}
 
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		o.UsePathStyle = true
+		o.UsePathStyle = !virtualhost
 	})
 
 	return client, nil
