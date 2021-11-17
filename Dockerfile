@@ -4,4 +4,4 @@ LABEL maintainers="DELL EMC ObjectScale"
 LABEL description="ObjectScale S3 Client"
 
 COPY ./s3cli s3cli
-ENTRYPOINT ["/s3cli"]
+ENTRYPOINT ["/s3cli", "b", "ls"]
