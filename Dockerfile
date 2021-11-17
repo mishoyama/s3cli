@@ -4,6 +4,7 @@ LABEL description="ObjectScale S3 Client"
 
 COPY ./s3cli /usr/bin/s3cli
 
-RUN apt-get update && apt-get install -y nginx
+ADD  ./entrypoint.sh entrypoint.sh
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD        ["demon"]
