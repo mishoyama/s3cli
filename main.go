@@ -91,6 +91,9 @@ func splitBucketObject(bucketObject string) (bucket, object string) {
 
 func newS3Client(sc *S3Cli) (*s3.S3, error) {
 	setCredentials(sc)
+	os.Setenv("AWS_ACCESS_KEY_ID", sc.ak)
+	os.Setenv("AWS_SECRET_ACCESS_KEY", sc.sk)
+	os.Setenv(endpointEnvVar, sc.endpoint)
 
 	sess := session.Must(session.NewSession())
 	sess.Config.MaxRetries = aws.Int(0)
