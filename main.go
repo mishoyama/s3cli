@@ -2,8 +2,11 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -39,6 +42,45 @@ var httpClient = http.Client{
 	},
 }
 
+type CredentialsFile struct {
+	Credentials string `json:"Credentials"`
+}
+
+type Credentials struct {
+	Endpoint    string `json:"endpoint"`
+	AccessKeyId string `json:"accessKeyId"`
+	SecretKeyId string `json:"secretKeyId"`
+}
+
+func setCredentials(sc *S3Cli) error {
+	path := os.Getenv("CREDENTIALS_FILE_PATH")
+	log.Printf("#%v ", path)
+
+	file := &CredentialsFile{}
+	jsonFile, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Printf("Path - %s, jsonFile.Get err   #%v ", path, err)
+	}
+	err = json.Unmarshal(jsonFile, file)
+	if err != nil {
+		log.Fatalf("Unmarshal: %+v", err)
+	}
+
+	creds := &Credentials{}
+	err = json.Unmarshal([]byte(file.Credentials), creds)
+	if err != nil {
+		log.Fatalf("Unmarshal: %+v", err)
+	}
+
+	log.Printf("#%v ", creds)
+
+	sc.endpoint = creds.Endpoint
+	sc.ak = creds.AccessKeyId
+	sc.sk = creds.SecretKeyId
+
+	return nil
+}
+
 func splitBucketObject(bucketObject string) (bucket, object string) {
 	bo := strings.SplitN(bucketObject, "/", 2)
 	if len(bo) == 2 {
@@ -48,14 +90,7 @@ func splitBucketObject(bucketObject string) (bucket, object string) {
 }
 
 func newS3Client(sc *S3Cli) (*s3.S3, error) {
-	if sc.ak != "" && sc.sk != "" {
-		os.Setenv("AWS_ACCESS_KEY_ID", sc.ak)
-		os.Setenv("AWS_SECRET_ACCESS_KEY", sc.sk)
-	}
-
-	if sc.endpoint == "" {
-		sc.endpoint = os.Getenv(endpointEnvVar)
-	}
+	setCredentials(sc)
 
 	sess := session.Must(session.NewSession())
 	sess.Config.MaxRetries = aws.Int(0)
