@@ -50,6 +50,7 @@ type Credentials struct {
 	Endpoint    string `json:"endpoint"`
 	AccessKeyId string `json:"accessKeyId"`
 	SecretKeyId string `json:"secretKeyId"`
+	Bucket      string `json:"secretKeyId"`
 }
 
 func setCredentials(sc *S3Cli) error {
@@ -73,7 +74,6 @@ func setCredentials(sc *S3Cli) error {
 	}
 
 	log.Printf("#%v ", creds)
-
 	sc.endpoint = creds.Endpoint
 	sc.ak = creds.AccessKeyId
 	sc.sk = creds.SecretKeyId
