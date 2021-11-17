@@ -30,6 +30,16 @@ pkg:
 	GOOS=windows GOARCH=amd64 go build ${LDFLAGS}
 	zip -m ${APP}-${VERSION}-win-amd64.zip ${APP}.exe
 
+## image: build image:latest with bin file
+.PHONY: image
+image:
+	docker build -t s3cli:latest -f Dockerfile  .
+
+## kind: load image:latest to kind
+.PHONY: kind
+kind:
+	kind load docker-image s3cli:latest
+
 ## test: runs go test with default values
 .PHONY: test
 test:
